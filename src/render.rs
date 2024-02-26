@@ -94,6 +94,7 @@ let b = &mesh.vertices[*b];
 log!("scale_a: {:?}, scale_b: {:?}", a_scale, b_scale);
             */
 
+            let a_max = projected_coord_b;
 log!("a: {:?}, b: {:?}, unit: {:?}, max: {:?}", projected_coord_a, projected_coord_b, unit, a_max);
 log!("diff: {:?}, |scale|: {}, |a_max|: {}", diff, (projected_coord_b - a_max).magnitude(), a_max.magnitude());
             draw_line(&colors[0], canvas_ctx, &projected_coord_a, &a_max);
@@ -121,8 +122,10 @@ pub fn draw_point(color: &JsValue, canvas_ctx: &web_sys::CanvasRenderingContext2
         canvas_ctx.arc(coord.x(), coord.y(), 100.0, 0.0, 2.0 * 3.14159);
         canvas_ctx.set_fill_style(color);
         canvas_ctx.fill();
+        /*
         canvas_ctx.set_stroke_style(&JsValue::from_str(&format!("#{:0>6x}", 0x000000)));
         canvas_ctx.stroke();
+        */
     }
 //    canvas_ctx.restore();
 

@@ -87,10 +87,6 @@ impl Apate_Instance {
             &mut self.scene.objects
             );
         log!("frame {} done\n\n\n", self.frames);
-if self.frames == 136 {
-        dbg_break();
-}
-
         self.frames += 1;
     }
 }

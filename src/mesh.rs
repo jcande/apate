@@ -20,7 +20,7 @@ impl Mesh {
         }
     }
 
-    pub fn mk_cube_og() -> Mesh {
+    pub fn mk_cube() -> Mesh {
         Self::new(
             Vec3::zeroes(),
             vec![
@@ -106,7 +106,7 @@ impl Mesh {
         )
     }
 
-    pub fn mk_cube() -> Mesh {
+    pub fn mk_cube_dbg() -> Mesh {
         Self::new(
             Vec3::zeroes(),
             vec![
