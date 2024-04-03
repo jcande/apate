@@ -43,10 +43,12 @@ pub fn go(canvas_ctx: &web_sys::CanvasRenderingContext2d, dims: Vec2, camera: &C
     let height = dims.y();
     let projection_matrix = Mat4::PerspectiveFovLH(0.78, width / height, 0.01, 1.0);
 
+    let mut points = Vec::<Vec2>::new();
+    let mut lines = Vec::<(Vec2, Vec2)>::new();
     for mesh in meshes.iter_mut() {
-        mesh.rotation.coord[0] += 0.01;
-        mesh.rotation.coord[1] += 0.01;
-        //mesh.rotation.coord[2] += 0.01;
+        mesh.rotation.coord[0] += 0.005;
+        mesh.rotation.coord[1] += 0.005;
+        mesh.rotation.coord[2] += 0.0001;
 
         // calculate the world_matrix by multiplying the rotation of the mesh with its position
         let world_matrix = Mat4::RotationYawPitchRoll(
@@ -60,47 +62,38 @@ pub fn go(canvas_ctx: &web_sys::CanvasRenderingContext2d, dims: Vec2, camera: &C
 
         let transform_matrix = world_matrix * view_matrix.clone() * projection_matrix.clone(); // VERIFIED
 
-let mut i = 0;
         for vertex in &mesh.vertices {
-log!("loop iteration: {}", i);
             let projected_coord = project(&dims, vertex, &transform_matrix);
-            //draw_point(&colors[i], canvas_ctx, &projected_coord);
-            draw_point(&colors[3], canvas_ctx, &projected_coord);
-i = (i + 1) % colors.len();
+            points.push(projected_coord);
         }
 
         for (a, b) in mesh.lines
             .iter()
-//            .map(|(a,b)| (&mesh.vertices[*a], &mesh.vertices[*b]))
+            .map(|(a,b)| (&mesh.vertices[*a], &mesh.vertices[*b]))
         {
-log!("line: ({}, {})", a, b);
-let a = &mesh.vertices[*a];
-let b = &mesh.vertices[*b];
-// The idea is to take the dot so the scale (by default 100.0) never surpasses the OTHER vertex
             let projected_coord_a = project(&dims, a, &transform_matrix);
             let projected_coord_b = project(&dims, b, &transform_matrix);
-            let diff = projected_coord_b - projected_coord_a;
-            let unit = diff.normal();
-
-            // kinda works (og solution)
-            let a_max = projected_coord_a + unit.scale(100.0);
-            let b_max = projected_coord_b - unit.scale(100.0);
-            /*
-            // in progress
-            let a_scale = unit.scale(100.0).dot(&projected_coord_b);
-            let a_max = projected_coord_a + unit.scale(a_scale);
-            let b_scale = unit.scale(100.0).dot(&projected_coord_a);
-            let b_max = projected_coord_b - unit.scale(b_scale);
-log!("scale_a: {:?}, scale_b: {:?}", a_scale, b_scale);
-            */
-
-            let a_max = projected_coord_b;
-log!("a: {:?}, b: {:?}, unit: {:?}, max: {:?}", projected_coord_a, projected_coord_b, unit, a_max);
-log!("diff: {:?}, |scale|: {}, |a_max|: {}", diff, (projected_coord_b - a_max).magnitude(), a_max.magnitude());
-            draw_line(&colors[0], canvas_ctx, &projected_coord_a, &a_max);
-//            draw_line(&colors[0], canvas_ctx, &projected_coord_b, &b_max);
+            lines.push((projected_coord_a, projected_coord_b));
         }
     }
+
+    canvas_ctx.save();
+
+    // Make vertex bubble mask
+    canvas_ctx.begin_path();
+    canvas_ctx.set_fill_style(&colors[3]);
+    for point in points {
+        draw_point(canvas_ctx, &point);
+    }
+    canvas_ctx.fill();
+    canvas_ctx.close_path();
+    canvas_ctx.clip();
+
+    for (a, b) in lines {
+        draw_line(&colors[0], canvas_ctx, &a, &b);
+    }
+
+    canvas_ctx.restore();
 }
 
 pub fn project(dims: &Vec2, coord: &Vec3, trans: &Mat4) -> Vec2 {
@@ -115,39 +108,16 @@ pub fn project(dims: &Vec2, coord: &Vec3, trans: &Mat4) -> Vec2 {
     return Vec2::new([x, y]);
 }
 
-pub fn draw_point(color: &JsValue, canvas_ctx: &web_sys::CanvasRenderingContext2d, coord: &Vec2) {
-//    canvas_ctx.save();
-    {
-        canvas_ctx.begin_path();
-        canvas_ctx.arc(coord.x(), coord.y(), 100.0, 0.0, 2.0 * 3.14159);
-        canvas_ctx.set_fill_style(color);
-        canvas_ctx.fill();
-        /*
-        canvas_ctx.set_stroke_style(&JsValue::from_str(&format!("#{:0>6x}", 0x000000)));
-        canvas_ctx.stroke();
-        */
-    }
-//    canvas_ctx.restore();
-
-/*
-        // drawPoint calls putPixel but does the clipping operation before
-        Device.prototype.drawPoint = function (point) {
-            // Clipping what's visible on screen
-            if (point.x >= 0 && point.y >= 0 && point.x < this.workingWidth 
-                                             && point.y < this.workingHeight) {
-                // Drawing a yellow point
-                this.putPixel(point.x, point.y, new BABYLON.Color4(1, 1, 0, 1));
-            }
-        };
-
-        */
+pub fn draw_point(canvas_ctx: &web_sys::CanvasRenderingContext2d, coord: &Vec2) {
+    canvas_ctx.move_to(coord.x(), coord.y());
+    canvas_ctx.arc(coord.x(), coord.y(), 100.0, 0.0, 2.0 * 3.14159);
 }
 
 pub fn draw_line(color: &JsValue, canvas_ctx: &web_sys::CanvasRenderingContext2d, coord_a: &Vec2, coord_b: &Vec2) {
-        canvas_ctx.begin_path();
-        canvas_ctx.move_to(coord_a.x(), coord_a.y());
-        canvas_ctx.line_to(coord_b.x(), coord_b.y());
-        canvas_ctx.close_path();
-        canvas_ctx.set_stroke_style(color);
-        canvas_ctx.stroke();
+    canvas_ctx.begin_path();
+    canvas_ctx.move_to(coord_a.x(), coord_a.y());
+    canvas_ctx.line_to(coord_b.x(), coord_b.y());
+    canvas_ctx.close_path();
+    canvas_ctx.set_stroke_style(color);
+    canvas_ctx.stroke();
 }

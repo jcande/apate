@@ -84,7 +84,7 @@ impl Apate_Instance {
             &self.sys_ctx.canvas_ctx,
             dims,
             &self.scene.camera,
-            &mut self.scene.objects
+            &mut self.scene.objects,
             );
         log!("frame {} done\n\n\n", self.frames);
         self.frames += 1;
