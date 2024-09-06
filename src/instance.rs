@@ -75,7 +75,7 @@ impl Apate_Instance {
     }
 
     pub fn new_frame(&mut self) {
-        log!("new frame alert: {}", self.frames);
+//        log!("new frame alert: {}", self.frames);
         let dims = Vec2::new([
                              self.sys_ctx.canvas_element.width().into(),
                              self.sys_ctx.canvas_element.height().into()]);
@@ -86,7 +86,7 @@ impl Apate_Instance {
             &self.scene.camera,
             &mut self.scene.objects,
             );
-        log!("frame {} done\n\n\n", self.frames);
+//        log!("frame {} done\n\n\n", self.frames);
         self.frames += 1;
     }
 }
@@ -113,6 +113,8 @@ pub fn firestarter(mut instance: Apate_Instance) {
     *ref_context.borrow_mut() = Some(Closure::new(move || {
         // NB this is the logic that gets invoked each animation frame!
         instance.new_frame();
+
+        // Queue up another go.
         animation_frame_thunk(
             base_context.borrow()
                 .as_ref().expect("it better be here"));

@@ -98,6 +98,7 @@ pub fn main() -> Result<(), JsValue> {
 
     let origin = Vec3::new([0.0, 0.0, 10.0]);
     let camera = Camera::new(origin);
+    let poly = mesh::Mesh::mk_tetra_cube();
     let poly = mesh::Mesh::mk_cube();
 
     log!("smoke weed every day");

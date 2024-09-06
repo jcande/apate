@@ -14,15 +14,6 @@ macro_rules! log {
     }
 }
 
-// render(camera, cube)
-//      calculate viewMatrix from camera
-//      calculate a projectionMatrix from width/height and magic
-//      iterate over each mesh
-//          calculate the worldMatrix by multiplying the rotation of the mesh with its position
-//          calculate the transformMatrix by multiplying the worldMatrix with the viewMatrix with the projectionMatrix
-//          iterate over each vertex in the mesh
-//              calculated the projected point (x,y,z coords) using the vertex and the transformMatrix
-//              draw the point to the screen
 pub fn go(canvas_ctx: &web_sys::CanvasRenderingContext2d, dims: Vec2, camera: &Camera, meshes: &mut Vec<Mesh>) {
     let colors = [
         JsValue::from_str(&format!("#{:0>6x}", 0xff00ff)), // pink?
@@ -34,6 +25,10 @@ pub fn go(canvas_ctx: &web_sys::CanvasRenderingContext2d, dims: Vec2, camera: &C
         JsValue::from_str(&format!("#{:0>6x}", 0xb00b1e)),
         JsValue::from_str(&format!("#{:0>6x}", 0xc0ffee)),
     ];
+    let line_color = &colors[0];
+    let bubble_color = &colors[3];
+    let line_color = &JsValue::from_str(&format!("#{:0>6x}", 0xffffff));
+    let bubble_color = &JsValue::from_str(&format!("#{:0>6x}", 0x000000));
 
     // calculate view_matrix from camera
     let view_matrix = Mat4::LookAtLH(camera.origin, camera.target, camera.up);
@@ -48,7 +43,9 @@ pub fn go(canvas_ctx: &web_sys::CanvasRenderingContext2d, dims: Vec2, camera: &C
     for mesh in meshes.iter_mut() {
         mesh.rotation.coord[0] += 0.005;
         mesh.rotation.coord[1] += 0.005;
-        mesh.rotation.coord[2] += 0.0001;
+        /*
+        mesh.rotation.coord[2] += 0.0005;
+        */
 
         // calculate the world_matrix by multiplying the rotation of the mesh with its position
         let world_matrix = Mat4::RotationYawPitchRoll(
@@ -60,7 +57,7 @@ pub fn go(canvas_ctx: &web_sys::CanvasRenderingContext2d, dims: Vec2, camera: &C
                                     mesh.origin.y(),
                                     mesh.origin.z());
 
-        let transform_matrix = world_matrix * view_matrix.clone() * projection_matrix.clone(); // VERIFIED
+        let transform_matrix = world_matrix * view_matrix.clone() * projection_matrix.clone();
 
         for vertex in &mesh.vertices {
             let projected_coord = project(&dims, vertex, &transform_matrix);
@@ -79,9 +76,12 @@ pub fn go(canvas_ctx: &web_sys::CanvasRenderingContext2d, dims: Vec2, camera: &C
 
     canvas_ctx.save();
 
+    canvas_ctx.set_fill_style(line_color);
+    canvas_ctx.fill_rect(0.0, 0.0, dims.x(), dims.y());
+
     // Make vertex bubble mask
     canvas_ctx.begin_path();
-    canvas_ctx.set_fill_style(&colors[3]);
+    canvas_ctx.set_fill_style(bubble_color);
     for point in points {
         draw_point(canvas_ctx, &point);
     }
@@ -89,8 +89,8 @@ pub fn go(canvas_ctx: &web_sys::CanvasRenderingContext2d, dims: Vec2, camera: &C
     canvas_ctx.close_path();
     canvas_ctx.clip();
 
-    for (a, b) in lines {
-        draw_line(&colors[0], canvas_ctx, &a, &b);
+    for (a, b) in lines.iter() {
+        draw_line(line_color, canvas_ctx, a, b);
     }
 
     canvas_ctx.restore();
@@ -114,10 +114,13 @@ pub fn draw_point(canvas_ctx: &web_sys::CanvasRenderingContext2d, coord: &Vec2) 
 }
 
 pub fn draw_line(color: &JsValue, canvas_ctx: &web_sys::CanvasRenderingContext2d, coord_a: &Vec2, coord_b: &Vec2) {
+    canvas_ctx.set_stroke_style(color);
+    canvas_ctx.set_line_width(10.0);
+
     canvas_ctx.begin_path();
     canvas_ctx.move_to(coord_a.x(), coord_a.y());
     canvas_ctx.line_to(coord_b.x(), coord_b.y());
     canvas_ctx.close_path();
-    canvas_ctx.set_stroke_style(color);
+
     canvas_ctx.stroke();
 }

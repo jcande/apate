@@ -14,7 +14,8 @@ impl Mesh {
         // TODO ensure every offset in lines fits within |vertices|
         Mesh {
             origin,
-            rotation: Vec3::zeroes(),
+            //rotation: Vec3::zeroes(),
+            rotation: Vec3::new([3.14159 / 4.0, 3.14159 / 4.0, 0.0]),
             vertices,
             lines,
         }
@@ -24,7 +25,6 @@ impl Mesh {
         Self::new(
             Vec3::zeroes(),
             vec![
-
                 Vec3::new([-1.0, 1.0, 1.0]),
                 Vec3::new([1.0, 1.0, 1.0]),
                 Vec3::new([-1.0, -1.0, 1.0]),
@@ -33,44 +33,10 @@ impl Mesh {
                 Vec3::new([1.0, 1.0, -1.0]),
                 Vec3::new([1.0, -1.0, 1.0]),
                 Vec3::new([1.0, -1.0, -1.0]),
-
-            /*
-                Vec3::new([-1.0, 1.0, 1.0]),
-                Vec3::new([1.0, 1.0, 1.0]),
-                Vec3::new([-1.0, -1.0, 1.0]),
-                Vec3::new([-1.0, -1.0, -1.0]),
-                Vec3::new([-1.0, 1.0, -1.0]),
-                Vec3::new([1.0, 1.0, -1.0]),
-                Vec3::new([1.0, -1.0, 1.0]),
-                Vec3::new([1.0, -1.0, -1.0]),
-            */
-
-            /*
-                Vec3::new([1.0,1.0,1.0]),
-                Vec3::new([1.0,-1.0,1.0]),
-                Vec3::new([-1.0,1.0,1.0]),
-                Vec3::new([-1.0,-1.0,1.0]),
-                // XXX negative z makes me sad
-                Vec3::new([1.0,1.0,-1.0]),
-                Vec3::new([1.0,-1.0,-1.0]),
-                Vec3::new([-1.0,1.0,-1.0]),
-                Vec3::new([-1.0,-1.0,-1.0]),
-            */
-
-                /*
-                Vec3::new([-100.0, 100.0, 100.0]),
-                Vec3::new([100.0, 100.0, 100.0]),
-                Vec3::new([-100.0, -100.0, 100.0]),
-                Vec3::new([-100.0, -100.0, -100.0]),
-                Vec3::new([-100.0, 100.0, -100.0]),
-                Vec3::new([100.0, 100.0, -100.0]),
-                Vec3::new([100.0, -100.0, 100.0]),
-                Vec3::new([100.0, -100.0, -100.0]),
-                */
-
             ],
 
             vec![
+                // inner cube
                 (0, 1),
                 (0, 2),
                 (0, 4),
@@ -102,6 +68,47 @@ impl Mesh {
                 (7, 3),
                 (7, 5),
                 (7, 6),
+
+            ],
+        )
+    }
+
+    pub fn mk_tetra_cube() -> Mesh {
+        Self::new(
+            Vec3::zeroes(),
+            vec![
+                Vec3::new([-1.0, 1.0, 1.0]),
+                Vec3::new([1.0, 1.0, 1.0]),
+                Vec3::new([1.0, -1.0, 1.0]),
+                Vec3::new([-1.0, -1.0, 1.0]),
+                Vec3::new([0.0, 1.0 + 2.0_f64.sqrt(), 0.0]),
+                Vec3::new([0.0, -1.0 - 2.0_f64.sqrt(), 0.0]),
+                Vec3::new([1.0 + 2.0_f64.sqrt(), 0.0, 0.0]),
+                Vec3::new([-1.0 - 2.0_f64.sqrt(), 0.0, 0.0]),
+                Vec3::new([0.0, 1.0, -1.0 - 2.0_f64.sqrt()]),
+                Vec3::new([0.0, -1.0, -1.0 + 2.0_f64.sqrt()]),
+                Vec3::new([1.0, 0.0, -1.0 - 2.0_f64.sqrt()]),
+                Vec3::new([-1.0, 0.0, -1.0 + 2.0_f64.sqrt()]),
+                Vec3::new([0.0, 0.0, 2.0]),
+            ],
+
+            vec![
+                // Square face 1
+                (0, 1), (1, 2), (2, 3), (3, 0),
+                // Square face 2
+                (4, 5), (6, 7), (8, 9), (10, 11),
+                // Connecting lines between faces
+                (0, 4), (1, 6), (2, 8), (3, 10),
+                // Inner square
+                (4, 6), (6, 8), (8, 10), (10, 4),
+                /*
+                // Lines from vertices to center
+                (0, 12), (1, 12), (2, 12), (3, 12),
+                // Lines from vertices to center
+                (4, 12), (5, 12), (6, 12), (7, 12),
+                // Lines from vertices to center
+                (8, 12), (9, 12), (10, 12), (11, 12),
+                */
             ],
         )
     }
