@@ -17,12 +17,12 @@ macro_rules! log {
 }
 */
 
-pub struct SimulationState {
+pub struct Scene {
     camera: Camera,
     meshes: Vec<Mesh>,
 }
 
-impl SimulationState {
+impl Scene {
     pub fn new(origin: Vec3, poly: Mesh) -> Self {
         Self {
             camera: Camera::new(origin),
@@ -32,7 +32,7 @@ impl SimulationState {
 }
 
 // maybe break this up into input(), step(), and render()?
-impl Simulation for SimulationState {
+impl Simulation for Scene {
     fn go(&mut self, ctx: &SystemContext, dims: Vec2) {
         // no input to grab
         tic(&dims, &self.camera, &mut self.meshes);

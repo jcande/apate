@@ -7,7 +7,7 @@ use crate::mesh::Mesh;
 mod camera;
 
 mod render;
-use crate::render::SimulationState;
+use crate::render::Scene;
 
 mod instance;
 use crate::instance::ObjInstance;
@@ -59,8 +59,8 @@ pub fn main() -> Result<(), JsValue> {
     let origin = Vec3::new([0.0, 0.0, 10.0]);
     let _poly = Mesh::mk_tetra_cube();
     let poly = Mesh::mk_cube();
-    let render_state = SimulationState::new(origin, poly);
-    ObjInstance::<SimulationState>::new(
+    let render_state = Scene::new(origin, poly);
+    ObjInstance::<Scene>::new(
             window, document, canvas, canvas_ctx, render_state)
         .start_fire();
 
