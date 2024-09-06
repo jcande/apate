@@ -113,6 +113,7 @@ impl Mesh {
         )
     }
 
+    /*
     pub fn mk_cube_dbg() -> Mesh {
         Self::new(
             Vec3::zeroes(),
@@ -128,5 +129,6 @@ impl Mesh {
             ],
         )
     }
+    */
 
 }

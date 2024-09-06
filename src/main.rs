@@ -1,28 +1,19 @@
-use std::rc::Rc;
-use std::cell::RefCell;
-use std::borrow::BorrowMut;
-
-use url;
 use wasm_bindgen::prelude::*;
-use wasm_bindgen_futures::spawn_local;
 
 mod point;
-use crate::point::Point;
 use crate::point::Vec3;
 mod mesh;
 use crate::mesh::Mesh;
 mod camera;
-use crate::camera::Camera;
 
 mod render;
+use crate::render::SimulationState;
 
 mod instance;
-use crate::instance::Apate_Instance;
+use crate::instance::ObjInstance;
 
 // This is recommended for debug builds. Panics will be logged to the console.
 extern crate console_error_panic_hook;
-
-// XXX RULE: EVERYTHING is a Point. Vectors don't exist. It is too confusing.
 
 // A macro to provide `println!(..)`-style syntax for `console.log` logging.
 macro_rules! log {
@@ -30,38 +21,6 @@ macro_rules! log {
         web_sys::console::log_1(&format!( $( $t )* ).into());
     }
 }
-
-/*
-
-The good shit:
-    https://www.davrous.com/2013/06/13/tutorial-series-learning-how-to-write-a-3d-soft-engine-from-scratch-in-c-typescript-or-javascript/
-
-Big picture:
-    each mesh should have an origin, and rotation (the rotation is done entirely in the world transform matrix)
-    each tick do the thing
-        project each mesh onto something (is this the framebuffer analogue?)
-        clip the vertices in a pleasing fashion
-
-    project - ???
-        maybe put a square around entire mesh and for each vertex clip out a circle?
-        maybe - https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Compositing
-    clip - ???
-
-// render(camera, cube)
-//      calculate viewMatrix from camera
-//          how?
-//              with Matrix.LookAtLH
-//      calculate a projectionMatrix from width/height and magic
-//          is this a constant?
-//              built via Matrix.PerspectiveFovLH
-//      iterate over each mesh
-//          calculate the worldMatrix by multiplying the rotation of the mesh with its position
-//          calculate the transformMatrix by multiplying the worldMatrix with the viewMatrix with the projectionMatrix
-//          iterate over each vertex in the mesh
-//              calculate the projected point using the vertex and the transformMatrix
-//              draw the point to the screen
-
-*/
 
 pub fn main() -> Result<(), JsValue> {
     console_error_panic_hook::set_once();
@@ -96,14 +55,14 @@ pub fn main() -> Result<(), JsValue> {
         .ok_or(JsValue::from_str("unable to retrieve 2d context from domino canvas"))?
         .dyn_into::<web_sys::CanvasRenderingContext2d>()?;
 
-    let origin = Vec3::new([0.0, 0.0, 10.0]);
-    let camera = Camera::new(origin);
-    let poly = mesh::Mesh::mk_tetra_cube();
-    let poly = mesh::Mesh::mk_cube();
-
     log!("smoke weed every day");
-    let mut instance = Apate_Instance::new(window, document, canvas, canvas_ctx, camera, vec![poly]);
-    instance::firestarter(instance);
+    let origin = Vec3::new([0.0, 0.0, 10.0]);
+    let _poly = Mesh::mk_tetra_cube();
+    let poly = Mesh::mk_cube();
+    let render_state = SimulationState::new(origin, poly);
+    ObjInstance::<SimulationState>::new(
+            window, document, canvas, canvas_ctx, render_state)
+        .start_fire();
 
     Ok(())
 }

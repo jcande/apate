@@ -2,23 +2,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 
-use crate::camera::Camera;
-use crate::mesh::Mesh;
 use crate::point::Vec2;
-
-use crate::render;
-
-// This is recommended for debug builds. Panics will be logged to the console.
-extern crate console_error_panic_hook;
-
-// XXX RULE: EVERYTHING is a Point. Vectors don't exist. It is too confusing.
-
-// A macro to provide `println!(..)`-style syntax for `console.log` logging.
-macro_rules! log {
-    ( $( $t:tt )* ) => {
-        web_sys::console::log_1(&format!( $( $t )* ).into());
-    }
-}
 
 // lifted from the `console_log` example
 #[wasm_bindgen(module = "/src/debug.js")]
@@ -27,101 +11,90 @@ extern "C" {
     fn dbg_break();
 }
 
-struct System_Context {
-    window: web_sys::Window,
-    document: web_sys::Document,
-    canvas_element: web_sys::HtmlCanvasElement,
-    canvas_ctx: web_sys::CanvasRenderingContext2d,
+pub struct SystemContext {
+    pub window: web_sys::Window,
+    pub document: web_sys::Document,
+    pub canvas_element: web_sys::HtmlCanvasElement,
+    pub canvas_ctx: web_sys::CanvasRenderingContext2d,
 }
 
-struct Scene {
-    camera: Camera,
-    objects: Vec<Mesh>,
+pub trait Simulation {
+    fn go(&mut self, ctx: &SystemContext, dims: Vec2);
 }
 
-pub struct Apate_Instance {
-    sys_ctx : System_Context,
+pub struct ObjInstance<Obj> {
+    sys_ctx: SystemContext,
 
-    // space?
-    scene: Scene,
+    obj: Obj,
 
     frames: usize,
 }
 
-impl Apate_Instance {
+impl<Obj: Simulation + 'static> ObjInstance<Obj> {
     pub fn new(
         window: web_sys::Window,
         document: web_sys::Document,
         canvas_element: web_sys::HtmlCanvasElement,
         canvas_ctx: web_sys::CanvasRenderingContext2d,
-        camera: Camera,
-        objects: Vec<Mesh>,
+        obj: Obj,
     ) -> Self {
-        Apate_Instance {
-            sys_ctx: System_Context {
+        Self {
+            sys_ctx: SystemContext {
                 window,
                 document,
                 canvas_element,
                 canvas_ctx,
             },
 
-            scene: Scene {
-                camera,
-                objects,
-            },
+            obj: obj,
 
             frames: 0,
         }
     }
 
-    pub fn new_frame(&mut self) {
-//        log!("new frame alert: {}", self.frames);
+    pub fn start_fire(mut self) {
+        fn animation_frame_thunk(callback: &Closure<dyn FnMut()>) {
+            // I don't like that we pull out a web_sys::Window from thin-air but I don't know if we can
+            // really do it any other way.
+            let window = web_sys::window().expect("can't find window");
+            window.request_animation_frame(callback
+                                           .as_ref()
+                                           .unchecked_ref())
+                .expect("`request_animation_frame` failed (this is terrible)");
+        }
+
+        // The idea here is that `base_context` is the "real" one and is initially constructed as some
+        // empty shell. Later on, we use the reference (i.e., `ref_context`) to populate the underlying
+        // structure. The way we do this is to construct a closure inside the option which references
+        // `base_context`. Once this value is constructed, we kick-start everything using the reference
+        // before dropping it. This is tricky. You probably don't understand it just from reading this.
+        let base_context = Rc::new(RefCell::new(None));
+        let ref_context = base_context.clone();
+
+        *ref_context.borrow_mut() = Some(Closure::new(move || {
+            // NB this is the logic that gets invoked each animation frame!
+            self.new_frame();
+
+            // Queue up another go.
+            animation_frame_thunk(
+                base_context.borrow()
+                    .as_ref().expect("unable to reference `base_context` (this is bad)"));
+        }));
+
+        // Now let's get this party started RIGHT
+        animation_frame_thunk(
+            ref_context.borrow()
+                .as_ref().expect("it better be here"));
+    }
+
+    fn new_frame(&mut self) {
         let dims = Vec2::new([
                              self.sys_ctx.canvas_element.width().into(),
                              self.sys_ctx.canvas_element.height().into()]);
         self.sys_ctx.canvas_ctx.clear_rect(0.0, 0.0, dims.x(), dims.y());
-        render::go(
-            &self.sys_ctx.canvas_ctx,
-            dims,
-            &self.scene.camera,
-            &mut self.scene.objects,
-            );
-//        log!("frame {} done\n\n\n", self.frames);
+
+        self.obj.go(&self.sys_ctx, dims);
+
         self.frames += 1;
     }
-}
-
-pub fn firestarter(mut instance: Apate_Instance) {
-    fn animation_frame_thunk(callback: &Closure<dyn FnMut()>) {
-        // I don't like that we pull out a web_sys::Window from thin-air but I don't know if we can
-        // really do it any other way.
-        let window = web_sys::window().expect("can't find window");
-        window.request_animation_frame(callback
-                                       .as_ref()
-                                       .unchecked_ref())
-            .expect("I have no fucking clue");
-    }
-
-    // The idea here is that `base_context` is the "real" one and is initially constructed as some
-    // empty shell. Later on, we use the reference (i.e., `ref_context`) to populate the underlying
-    // structure. The way we do this is to construct a closure inside the option which references
-    // `base_context`. Once this value is constructed, we kick-start everything using the reference
-    // before dropping it. This is tricky. You probably don't understand it just from reading this.
-    let base_context = Rc::new(RefCell::new(None));
-    let ref_context = base_context.clone();
-
-    *ref_context.borrow_mut() = Some(Closure::new(move || {
-        // NB this is the logic that gets invoked each animation frame!
-        instance.new_frame();
-
-        // Queue up another go.
-        animation_frame_thunk(
-            base_context.borrow()
-                .as_ref().expect("it better be here"));
-    }));
-
-    // Now let's get this party started RIGHT
-    animation_frame_thunk(
-        ref_context.borrow()
-            .as_ref().expect("it better be here"));
 }
