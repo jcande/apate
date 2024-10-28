@@ -3,25 +3,17 @@
     <meta charset="utf-8" />
     <!-- this is mobile related magic -->
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="stylesheet" href="/index-c920ca43256fdcb9.css">
-    <link rel="preload" href="/index-7eeee8fa37b7636a_bg.wasm" as="fetch" type="application/wasm" crossorigin="">
-    <link rel="modulepreload" href="/index-7eeee8fa37b7636a.js">
     <!-- this is probably misguided. I want the dominos to take up the full screen and this does that. -->
     <style type="text/css">
       /* Disable scrollbar */
       html { overflow-y: hidden; }
       #illusion-div {
-          height: 94vh;
-          width: 97vw;
+          height: 98vh;
+          width: 99vw;
       }
     </style>
   </head>
   <body>
-    <script type="module">
-      import init, * as bindings from '/index-7eeee8fa37b7636a.js';
-      window.wasmBindings = bindings;
-      init('/index-7eeee8fa37b7636a_bg.wasm');
-    </script>
     <app>
       <div id="illusion-div">
         <canvas id="phantasm" style="border:1px solid black;" ref={this.canvasRef} width={this.state.canvasWidth} height={this.state.canvasHeight}>Looks like you won't be seeing some cool illusions.</canvas>
